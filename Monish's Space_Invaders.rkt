@@ -505,6 +505,7 @@
 (define (move-spaceship-bullets sbullets)
   (cond
     [(empty? sbullets) empty]
+    [(> 0 (by-value (first sbullets))) (move-spaceship-bullets (rest sbullets))]
     [(cons? sbullets) (cons
                        (make-bullet
                         (spaceship-bmover(first sbullets))
@@ -534,7 +535,7 @@
 (define (spaceship-bmover bullet)
   (make-posn
    (posn-x (bullet-location bullet))
-   (- (posn-y (bullet-location bullet))
+   (- (by-value bullet)
       (bullet-speed bullet))))
 
 ;;;; Tests
@@ -563,6 +564,7 @@
 (define (move-invader-bullets ibullets)
   (cond
     [(empty? ibullets) empty]
+    [(< HEIGHT  (by-value (first ibullets))) (move-invader-bullets (rest ibullets))]
     [(cons? ibullets) (cons
                        (make-bullet
                         (invader-bmover(first ibullets))
@@ -916,6 +918,12 @@
 
 
 
+
+(define (remove-hits-and-out-of-bounds spaceship invaders sbullets ibullets )
+  (cond
+    [(= ((spaceship-location spaceship))]))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;; part of big bang on tick events;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;; Signature
@@ -933,6 +941,7 @@
 (define (update-world world)
    (make-world
    (world-invaders world)
+   
    (move-spaceship(world-spaceship world))
    (move-invader-bullets(add-invader-bullets
                          (world-invaders world)
