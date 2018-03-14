@@ -27,7 +27,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;MAKING SPACESHIP & INVADERS ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-struct spaceship [location speed direction])
-;;INTERP: A Spaceship is a (make-spaceship posn nonNegInteger nonNegInteger nonNegInteger)
+;;INTERP: A Spaceship is a (make-spaceship posn nonNegInteger nonNegInteger)
 
 ;; Deconstructor Template
 ;; spaceship-fn: Spaceship -> ???
@@ -50,7 +50,7 @@
 ;; Deconstructor Template
 ;; invader-fn: Invader -> ???
 #; (define (invader-fn invader)
-    ... (location-fn (invader-location invader))...
+    ... (posn-fn (invader-location invader))...
     ... (invader-size invader) ...)
 
 ;; A ListOfInvaders (LoI) is one of
@@ -363,7 +363,7 @@
 (define-struct bullet [location radius direction speed])
 ;; A Bullet is (make-bullet Posn PosInt Direction PosInt)
 ;; INTERP: represents a bullet with its current location,
-;;         the bullet's radius, the bullet's direction and
+;;         the bullet's radius, the bullet's direction axnd
 ;;         the bullet's speed
 
 ;;;; Deconstructor Template
@@ -416,8 +416,8 @@
   (cond
     [(empty? lob) background]    
     [(cons? lob) (place-image (bullet-image (first lob)) 
-                                  (bx-value(first lob))
-                                  (by-value(first lob))
+                                  (bullet-x-value(first lob))
+                                  (bullet-y-value(first lob))
                                   (draw-bullets (rest lob) background))]))
 ;;;; Tests
 
@@ -448,38 +448,38 @@
 
 
 ;;;; Signature
-;; bx-value : Bullet => NonNegInteger
+;; bullet-x-value : Bullet => NonNegInteger
 
 ;;;; Purpose
 ;; GIVEN: a bullet
 ;; RETURNS: x coordinate of bullet
 
 ;;;; Examples
-;; (bx-value BULLET1) => 30
+;; (bullet-x-value BULLET1) => 30
 
 ;;;; Function Definition
-(define (bx-value bullet)
+(define (bullet-x-value bullet)
   (posn-x (bullet-location bullet)))
 
 ;;;; Tests
-(check-expect (bx-value BULLET1) 30)
+(check-expect (bullet-x-value BULLET1) 30)
 
 ;;;; Signature
-;; by-value : Bullet => NonNegInteger
+;; bullet-y-value : Bullet => NonNegInteger
 
 ;;;; Purpose
 ;; GIVEN: a bullet
 ;; RETURNS: y coordinate of bullet
 
 ;;;; Examples
-;; (by-value BULLET1) => 30
+;; (bullet-y-value BULLET1) => 30
 
 ;;;; Function Definition
-(define (by-value bullet)
+(define (bullet-y-value bullet)
   (posn-y (bullet-location bullet)))
 
 ;;;; Tests
-(check-expect (by-value BULLET1) 30)
+(check-expect (bullet-y-value BULLET1) 30)
 
 ;; move-spaceship-bullets : move each spaceship bullet in the list upwards by SPEED units
 ;; RETURNS: list of spaceship bullets updated by speed units
@@ -505,7 +505,7 @@
 (define (move-spaceship-bullets sbullets)
   (cond
     [(empty? sbullets) empty]
-    [(> 0 (by-value (first sbullets))) (move-spaceship-bullets (rest sbullets))]
+    [(> 0 (bullet-y-value (first sbullets))) (move-spaceship-bullets (rest sbullets))]
     [(cons? sbullets) (cons
                        (make-bullet
                         (spaceship-bmover(first sbullets))
@@ -535,7 +535,7 @@
 (define (spaceship-bmover bullet)
   (make-posn
    (posn-x (bullet-location bullet))
-   (- (by-value bullet)
+   (- (bullet-y-value bullet)
       (bullet-speed bullet))))
 
 ;;;; Tests
@@ -564,7 +564,7 @@
 (define (move-invader-bullets ibullets)
   (cond
     [(empty? ibullets) empty]
-    [(< HEIGHT  (by-value (first ibullets))) (move-invader-bullets (rest ibullets))]
+    [(< HEIGHT  (bullet-y-value (first ibullets))) (move-invader-bullets (rest ibullets))]
     [(cons? ibullets) (cons
                        (make-bullet
                         (invader-bmover(first ibullets))
@@ -915,14 +915,36 @@
 (check-expect (list-length example-list) 3)
 
 
+;;;;;;;;;;;;;;;;;;; removing bullets & invaders ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+;;;; Function Definition
+;(define (remove-hit-invaders sbullets invaders)
+;  (cond
+;    [(invader-hit? sbullets (first invaders))
+;     (remove-hit-invaders sbullets (rest invaders))]
+;    [else (remove-hit-invaders sbullets invaders)]
 
 
-(define (remove-hits-and-out-of-bounds spaceship invaders sbullets ibullets )
-  (cond
-    [(= ((spaceship-location spaceship))]))
+;(define (hit-left-side? sbullet invader)
+;  (and (<= (- (invader-x-value invader) (/ (invader-size invader) 2))
+;           (posn-x sbullet))           
+;       (<= (- (invader-y-value invader) (/ (invader-size invader) 2))
+;           (posn-y sbullet))))
+           
+;(define (hit-right-side? sbullet invader)
+;  (and (>= (+ (invader-x-value invader) (/ (invader-size invader) 2))
+;           (posn-x sbullet))           
+;       (>= (+ (invader-y-value invader) (/ (invader-size invader) 2))
+;           (posn-y sbullet))))
 
+
+;(define (invader-hit? sbullets invader)
+;  (cond
+;  [(empty? sbullets) #false]  
+;  [(and (hit-left-side? (first sbullets) invader)
+;      (hit-right-side? (first sbullets) invader)) #true]
+;  [else (invader-hit? (rest sbullets) invader)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;; part of big bang on tick events;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -940,8 +962,7 @@
 ;;;; Function Definition
 (define (update-world world)
    (make-world
-   (world-invaders world)
-   
+   (world-invaders world)   
    (move-spaceship(world-spaceship world))
    (move-invader-bullets(add-invader-bullets
                          (world-invaders world)
@@ -955,7 +976,7 @@
 (big-bang INIT-WORLD
           (to-draw draw-world)
           (on-key spaceship-key-events)
-          (on-tick update-world .15))
+          (on-tick update-world .1))
           
 
 
