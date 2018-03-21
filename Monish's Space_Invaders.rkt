@@ -21,6 +21,7 @@
 (define RIGHT "right")
 (define SPACESHIP-BULLET-DIRECTION UP)
 (define INVADERS-BULLET-DIRECTION DOWN)
+(define INVADER-SIZE 20)
 
 
 
@@ -41,6 +42,22 @@
                         (make-posn 250 780)
                         25
                         LEFT))
+
+
+;; Location is a Posn
+;; INTERP: represents the x and y coordinates of an object
+
+;; Speed is a nonNegInteger
+;; INTERP: represents how fast an object is moving
+
+;; A direction is one of:
+; -UP
+; -DOWN
+; -LEFT
+; -RIGHT
+;; INTERP: represents the various directions
+
+
 
 
 
@@ -71,16 +88,16 @@
 
 (define ROW1-INVADER (make-invader
                       (make-posn 100 20)
-                      20))
+                      INVADER-SIZE))
 (define ROW2-INVADER (make-invader
                       (make-posn 100 50)
-                      20))
+                      INVADER-SIZE))
 (define ROW3-INVADER (make-invader
                       (make-posn 100 80)
-                      20))
+                      INVADER-SIZE))
 (define ROW4-INVADER (make-invader
                       (make-posn 100 110)
-                      20))
+                      INVADER-SIZE))
 
 
 ;;;; Signature
@@ -137,7 +154,7 @@
                  (make-invader
                       (make-posn (+ (invader-x-value invader) INVADER-SPACE)
                                  (invader-y-value invader))                      
-                      20)
+                      INVADER-SIZE)
                  (- column 1)))]))
 
 ;;;; Tests
@@ -197,10 +214,9 @@
 (check-expect (draw-invaders (cons ROW1-INVADER empty) CANVAS)
               (place-image (invader-image ROW1-INVADER) 100 20 CANVAS))
 
-
-
 (define SPACESHIP-LENGTH 40)
 (define SPACESHIP-WIDTH 20)
+
 
 (define spaceship-image
   (rectangle SPACESHIP-LENGTH SPACESHIP-WIDTH 'solid 'black))
@@ -215,7 +231,7 @@
 ;; already at the left side of the game, which stops the spaceship
 
 ;;;; Examples
-;; (move-spaceship-left INIT-SPACESHIP) => (make-spaceship (make-posn 225 780) 25 "left")
+;; (move-spaceship-left d) => (make-spaceship (make-posn 225 780) 25 "left")
 ;; (move-spaceship-left (make-spaceship (make-posn 0 780) 25 "left")) =>
 ;; (make-spaceship (make-posn 0 780) 25 "left")
 
@@ -672,7 +688,7 @@
 ;;;; A KeyEvent is one of
 ;; "left"
 ;; "right"
-;; "up"
+;; " "
 ;; INTERP: Represents directional input from the keyboard
 
 
@@ -845,7 +861,7 @@
                                                                   SPACESHIP-BULLET-DIRECTION
                                                                   BULLET-SPEED)
                                                                  empty))
-;;;; need a test where list of spaceship bullets is greater than 3
+
 
 ;;;; Signature
 ;; add-invader-bullets: Invaders Ibullets -> Ibullets
@@ -861,13 +877,15 @@
 
 (define (add-invader-bullets invaders ibullets)
   (cond
-    [(>= (list-length ibullets) MAX-INVADER-BULLETS) ibullets]
-    [else (cons (make-bullet
+    [(= (list-length ibullets) MAX-INVADER-BULLETS) ibullets]
+    [(= 1(random 10)) (cons (make-bullet
                  (random-invader-posn invaders)              
                  BULLET-RADIUS
                  INVADERS-BULLET-DIRECTION
                  BULLET-SPEED)
-                ibullets)]))
+                ibullets)]
+    [else ibullets]))
+
 
 
 ;;;; Tests
@@ -918,33 +936,209 @@
 ;;;;;;;;;;;;;;;;;;; removing bullets & invaders ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+
+
+
+;;;; Signature
+;;remove-hit-invaders: Sbullets Invaders -> Invaders
+
+
+;;;; Purpose
+;;Given: a list of spaceship bullets and invaders
+;;Returns: updated list of hit invaders removed
+
+;;;; Examples
+;; (remove-hit-invaders BULLET-TEST2 4INVADER-ROWS) =>
+;; (cons (make-invader (make-posn 100 50) 20)
+;; (cons (make-invader (make-posn 100 80) 20)
+;; (cons (make-invader (make-posn 100 110) 20) '())))
+;; (remove-hit-invaders BULLET-TEST3 4INVADER-ROWS) =>
+;; (cons (make-invader (make-posn 100 30) 20)
+;; (cons (make-invader (make-posn 100 50) 20)
+;; (cons (make-invader (make-posn 100 80) 20)
+;; (cons (make-invader (make-posn 100 110) 20) '())))
+
+(define 4INVADER-ROWS (list ROW1-INVADER ROW2-INVADER ROW3-INVADER ROW4-INVADER))
+
+(define BULLET3 (make-bullet (make-posn 105 20) 5 UP 5))
+(define BULLET4 (make-bullet (make-posn 200 90) 5 UP 5))
+(define BULLET5 (make-bullet (make-posn 0 0) 5 UP 5))
+(define BULLET-TEST2 (list BULLET3 BULLET4))
+(define BULLET-TEST3 (cons BULLET4(cons BULLET5 empty)))
+
+
+
 ;;;; Function Definition
-;(define (remove-hit-invaders sbullets invaders)
-;  (cond
-;    [(invader-hit? sbullets (first invaders))
-;     (remove-hit-invaders sbullets (rest invaders))]
-;    [else (remove-hit-invaders sbullets invaders)]
+(define (remove-hit-invaders sbullets invaders)
+  (cond
+    [(empty? sbullets) invaders]
+    [(empty? invaders) empty]
+    [(invader-hit? sbullets (first invaders))
+     (remove-hit-invaders sbullets (rest invaders))]
+    [else (cons (first invaders) (remove-hit-invaders sbullets (rest invaders)))]))
+
+;;;; Tests
+
+(check-expect (remove-hit-invaders BULLET-TEST2 4INVADER-ROWS)
+              (list ROW2-INVADER ROW3-INVADER ROW4-INVADER))
+(check-expect (remove-hit-invaders BULLET-TEST3 4INVADER-ROWS)
+              (list ROW1-INVADER ROW2-INVADER ROW3-INVADER ROW4-INVADER))
 
 
-;(define (hit-left-side? sbullet invader)
-;  (and (<= (- (invader-x-value invader) (/ (invader-size invader) 2))
-;           (posn-x sbullet))           
-;       (<= (- (invader-y-value invader) (/ (invader-size invader) 2))
-;           (posn-y sbullet))))
+;;;; Signature
+;;hit-left-side?: Sbullet Invader -> Boolean
+
+
+;;;; Purpose
+;;Given: an invader and a spaceship bullet
+;;Returns: true if bullet hits left side of spaceship, false otherwise
+
+;;;; Examples
+;; (hit-left-side? BULLET3 ROW1-INVADER) => #true
+;; (hit-left-side? BULLET4 ROW1-INVADER) => #false
+
+
+;;;; Function Definition
+(define (hit-left-side? sbullet invader)
+  (and (<= (- (invader-x-value invader) (/ (invader-size invader) 2))
+           (posn-x (bullet-location sbullet)))           
+       (<= (- (invader-y-value invader) (/ (invader-size invader) 2))
+           (posn-y (bullet-location sbullet)))))
+
+;;;; Tests
+(check-expect (hit-left-side? BULLET3 ROW1-INVADER) #true)
+(check-expect (hit-left-side? BULLET5 ROW1-INVADER) #false)
+
+
+;;;; Signature
+;;hit-right-side?: Sbullet Invader -> Boolean
+
+
+;;;; Purpose
+;;Given: an invader and a spaceship bullet
+;;Returns: true if bullet hits right side of spaceship, false otherwise
+
+;;;; Examples
+;; (hit-right-side? BULLET3 ROW1-INVADER) => #true
+;; (hit-right-side? BULLET4 ROW1-INVADER) => #false
+
+
+;;;; Function Definition
+(define (hit-right-side? sbullet invader)
+  (and (>= (+ (invader-x-value invader) (/ (invader-size invader) 2))
+           (posn-x (bullet-location sbullet)))           
+       (>= (+ (invader-y-value invader) (/ (invader-size invader) 2))
+           (posn-y (bullet-location sbullet)))))
+
+;;;; Tests
+(check-expect (hit-right-side? BULLET3 ROW1-INVADER) #true)
+(check-expect (hit-right-side? BULLET4 ROW1-INVADER) #false)
+
+
+;;;; Signature
+;;invader-hit?: Sbullets Invader -> Boolean
+
+
+;;;; Purpose
+;;Given: an invader and a spaceship bullet list
+;;Returns: true if bullet hits spaceship, false otherwise
+
+;;;; Examples
+;; (invader-hit? BULLET-TEST2 ROW1-INVADER) => #true
+;; (invader-hit? BULLET-TEST3 ROW1-INVADER) => #false
+
+
+;;;; Function Definition
+(define (invader-hit? sbullets invader)
+  (cond
+  [(empty? sbullets) #false]  
+  [(and (hit-left-side? (first sbullets) invader)
+      (hit-right-side? (first sbullets) invader)) #true]
+  [else (invader-hit? (rest sbullets) invader)]))
+
+;;;; Tests
+(check-expect (invader-hit? BULLET-TEST2 ROW1-INVADER) #true)
+(check-expect (invader-hit? BULLET-TEST3 ROW1-INVADER) #false)
+
+
+
+;;;; Signature
+;;remove-hit-bullet: Sbullets Invaders -> Sbullets
+
+;;;; Purpose
+;;Given: a list of spaceship bullets and a list of invaders
+;;Returns: updated spaceship bullet list with hit bullet removed
+
+;;;; Examples
+;; (remove-hit-bullet BULLET-TEST2 4INVADER-ROWS) =>
+;; (cons BULLET4 empty)
+;; (remove-hit-bullet BULLET-TEST3 4INVADER-ROWS) =>
+;; BULLET-TEST3
+
+;;;; Function Definition
+(define (remove-hit-bullet sbullets invaders)
+  (cond
+    [(empty? sbullets) empty]
+    [(cons? sbullets) (cond
+           [(= (list-length invaders)
+               (list-length (remove-hit-invaders sbullets invaders)))
+            (cons (first sbullets) (remove-hit-bullet (rest sbullets) invaders))]
+           [else (remove-hit-bullet (rest sbullets) invaders)])]))
+
+;;;; Tests
+(check-expect (remove-hit-bullet BULLET-TEST2 4INVADER-ROWS)(cons BULLET4 empty))
+(check-expect (remove-hit-bullet BULLET-TEST3 4INVADER-ROWS) BULLET-TEST3)
+
+
+;;;; Signature
+;; hit-spacehship-left-side?: Ibullet Spaceship -> Boolean
+
+;;;; Purpose
+;;Given: an invader bullet and a spaceship
+;;Returns: true if bullet hits spaceship left side, false otherwise
+
+;;;; Examples
+;; (hit-spaceship-left-side?
+
+
+(define INIT-SPACESHIP (make-spaceship
+                        (make-posn 250 780)
+                        25
+                        LEFT))
+
+;;;; Function Definition
+(define (hit-spaceship-left-side? ibullet spaceship)
+  (and (<= (- (spaceship-x-value spaceship) (/ SPACESHIP-LENGTH 2))
+           (posn-x (bullet-location ibullet)))           
+       (<= (- (spaceship-y-value spaceship) (/ SPACESHIP-WIDTH 2))
+           (posn-y (bullet-location ibullet)))))
            
-;(define (hit-right-side? sbullet invader)
-;  (and (>= (+ (invader-x-value invader) (/ (invader-size invader) 2))
-;           (posn-x sbullet))           
-;       (>= (+ (invader-y-value invader) (/ (invader-size invader) 2))
-;           (posn-y sbullet))))
+(define (hit-spaceship-right-side? ibullet spaceship)
+  (and (>= (+ (spaceship-x-value spaceship) (/ SPACESHIP-LENGTH 2))
+           (posn-x (bullet-location ibullet)))           
+       (>= (+ (spaceship-y-value spaceship) (/ SPACESHIP-WIDTH 2))
+           (posn-y (bullet-location ibullet)))))
 
 
-;(define (invader-hit? sbullets invader)
-;  (cond
-;  [(empty? sbullets) #false]  
-;  [(and (hit-left-side? (first sbullets) invader)
-;      (hit-right-side? (first sbullets) invader)) #true]
-;  [else (invader-hit? (rest sbullets) invader)]))
+(define (spaceship-hit? ibullets spaceship)
+   (cond
+  [(empty? ibullets) #false]  
+  [(and (hit-spaceship-left-side? (first ibullets) spaceship)
+      (hit-spaceship-right-side? (first ibullets) spaceship)) #true]
+  [else (spaceship-hit? (rest ibullets) spaceship)]))
+
+(define (invaders-dead? invaders)
+  (cond
+    [(empty? invaders) #true]
+    [else #false]))
+
+
+(define (game-over world)
+  (or (spaceship-hit? (world-ibullets world)
+                      (world-spaceship world))
+      (invaders-dead? (world-invaders world))))
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;; part of big bang on tick events;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -962,21 +1156,27 @@
 ;;;; Function Definition
 (define (update-world world)
    (make-world
-   (world-invaders world)   
+   (remove-hit-invaders
+    (world-sbullets world)
+    (world-invaders world))   
    (move-spaceship(world-spaceship world))
-   (move-invader-bullets(add-invader-bullets
-                         (world-invaders world)
-                         (world-ibullets world)))
-   (move-spaceship-bullets (world-sbullets world))))
+   (move-invader-bullets
+    (add-invader-bullets
+     (world-invaders world)
+     (world-ibullets world)))
+   (move-spaceship-bullets (remove-hit-bullet (world-sbullets world)
+                                              (world-invaders world)))))
+                                
 
 ;;;; Tests
 ;; can't run tests because of random function in add-invader-bullets
 
 
-(big-bang INIT-WORLD
-          (to-draw draw-world)
-          (on-key spaceship-key-events)
-          (on-tick update-world .1))
+;(big-bang INIT-WORLD
+;          (to-draw draw-world)
+;          (on-key spaceship-key-events)
+;          (on-tick update-world .1)
+;          (stop-when game-over))
           
 
 
