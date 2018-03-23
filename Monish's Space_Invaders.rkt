@@ -402,12 +402,37 @@
        [(empty? lob) ...]
        [(cons? lob) ... bullet-fn(first lob) ...
                     ... (lob-fn (rest lob)) ...]))
-     
-;; A sbullets is a LoB
+
+;; A Sbullet is a bullet
+
+;; A Sbullets is one of:
+;; -empty
+;; (cons sbullet Sbullets)
 ;; INTERP: spaceship bullets is a list of bullets
 
-;; An ibullets is a LoB
+;;;; Deconstructor Template
+;; sbullets-fn: Sbullets -> ???
+#; (define (sbullets-fn sbullets)
+     (cond
+       [(empty? sbullets) ...]
+       [(cons? sbullets) ... bullet-fn(first sbullets) ...
+                    ... (sbullets-fn (rest sbullets)) ...]))
+     
+;; An Ibullet is a bullet
+
+;; An Ibullets is one of:
+;; -empty
+;; (cons Ibullet Ibullets)
 ;; INTERP: invader bullets is a list of bullets
+
+;;;; Deconstructor Template
+;; ibullets-fn: Ibullets -> ???
+#; (define (ibullets-fn ibullets)
+     (cond
+       [(empty? ibullets) ...]
+       [(cons? ibullets) ... bullet-fn(first ibullets) ...
+                    ... (ibullets-fn (rest ibullets)) ...]))
+     
 
 
 ;;;; Signature
@@ -667,16 +692,11 @@
                       empty))
 
 
-(define DEAD-SPACESHIP (make-spaceship
-                        (make-posn 0 0)
-                        0
-                        LEFT))
 
 
-
-(define END-WORLD (make-world
-                   INVADER-ARMY
-                   DEAD-SPACESHIP
+(define DEAD-WORLD (make-world
+                   empty
+                   INIT-SPACESHIP
                    empty
                    empty))
 
@@ -1090,6 +1110,11 @@
 (check-expect (remove-hit-bullet BULLET-TEST3 4INVADER-ROWS) BULLET-TEST3)
 
 
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; STOP-WHEN ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 ;;;; Signature
 ;; hit-spacehship-left-side?: Ibullet Spaceship -> Boolean
 
@@ -1098,13 +1123,11 @@
 ;;Returns: true if bullet hits spaceship left side, false otherwise
 
 ;;;; Examples
-;; (hit-spaceship-left-side?
+;; (hit-spaceship-left-side? HIT-LEFT-BULLET INIT-SPACESHIP => #true
+;; (hit-spaceship-left-side? MISS-BULLET INIT-SPACESHIP => #false
 
-
-(define INIT-SPACESHIP (make-spaceship
-                        (make-posn 250 780)
-                        25
-                        LEFT))
+(define HIT-LEFT-BULLET (make-bullet (make-posn 245 780) 5 DOWN 5))
+(define MISS-LEFT-BULLET (make-bullet (make-posn 100 400) 5 DOWN 5))
 
 ;;;; Function Definition
 (define (hit-spaceship-left-side? ibullet spaceship)
@@ -1112,14 +1135,53 @@
            (posn-x (bullet-location ibullet)))           
        (<= (- (spaceship-y-value spaceship) (/ SPACESHIP-WIDTH 2))
            (posn-y (bullet-location ibullet)))))
-           
+
+;;;; Tests
+(check-expect (hit-spaceship-left-side? HIT-LEFT-BULLET INIT-SPACESHIP)#true)
+(check-expect (hit-spaceship-left-side? MISS-LEFT-BULLET INIT-SPACESHIP)#false)
+
+;;;; Signature
+;; hit-spacehship-right-side?: Ibullet Spaceship -> Boolean
+
+;;;; Purpose
+;;Given: an invader bullet and a spaceship
+;;Returns: true if bullet hits spaceship right side, false otherwise
+
+;;;; Examples
+;; (hit-spaceship-right-side? HIT-BULLET INIT-SPACESHIP => #true
+;; (hit-spaceship-right-side? MISS-RIGHT-BULLET INIT-SPACESHIP => #false
+
+(define HIT-RIGHT-BULLET (make-bullet (make-posn 255 780) 5 DOWN 5))
+(define MISS-RIGHT-BULLET (make-bullet (make-posn 100 800) 5 DOWN 5))
+
+;;;; Function Definition
 (define (hit-spaceship-right-side? ibullet spaceship)
   (and (>= (+ (spaceship-x-value spaceship) (/ SPACESHIP-LENGTH 2))
            (posn-x (bullet-location ibullet)))           
        (>= (+ (spaceship-y-value spaceship) (/ SPACESHIP-WIDTH 2))
            (posn-y (bullet-location ibullet)))))
 
+;;;; Tests
+(check-expect (hit-spaceship-right-side? HIT-RIGHT-BULLET INIT-SPACESHIP)#true)
+(check-expect (hit-spaceship-right-side? MISS-RIGHT-BULLET INIT-SPACESHIP)#false)
 
+;;;; Signature
+;; spaceship-hit?: Ibullets Spaceship -> Boolean
+
+;;;; Purpose
+;;Given: a list of invader bullets and a spaceship
+;;Returns: true if bullet hits spaceship, false otherwise
+
+(define HIT-BULLETS (cons HIT-LEFT-BULLET(cons HIT-RIGHT-BULLET empty)))
+(define MISS-BULLETS (cons MISS-LEFT-BULLET (cons MISS-RIGHT-BULLET empty)))
+
+
+;;;; Examples
+;; (spaceship-hit? HIT-BULLETS INIT-SPACESHIP => #true
+;; (spaceship-hit? MISS-BULLETS INIT-SPACESHIP => #false
+
+
+;;;; Function Definition
 (define (spaceship-hit? ibullets spaceship)
    (cond
   [(empty? ibullets) #false]  
@@ -1127,17 +1189,58 @@
       (hit-spaceship-right-side? (first ibullets) spaceship)) #true]
   [else (spaceship-hit? (rest ibullets) spaceship)]))
 
+;;;; Tests
+(check-expect (spaceship-hit? HIT-BULLETS INIT-SPACESHIP) #true)
+(check-expect (spaceship-hit? MISS-BULLETS INIT-SPACESHIP) #false)
+
+
+;;;; Signature
+;; invaders-dead?: Invaders -> Boolean
+
+;;;; Purpose
+;;Given: a list of invaders
+;;Returns: true if list of invaders is empty, false otherwise
+
+
+;;;; Examples
+;; (invaders-dead? empty => #true
+;; (spaceship-hit? INVADER-ARMY => #false
+
+
+;;;; Function Definition
 (define (invaders-dead? invaders)
   (cond
     [(empty? invaders) #true]
     [else #false]))
 
+;;;; Tests
+(check-expect (invaders-dead? empty) #true)
+(check-expect (invaders-dead? INVADER-ARMY) #false)
 
+
+;;;; Signature
+;; game-over: World -> Boolean
+
+;;;; Purpose
+;;Given: a world
+;;Returns: true if list of invaders is empty or spaceship is hit
+;; and false otherwise
+
+
+;;;; Examples
+;; (game-over DEAD-WORLD => #true
+;; (game-over INIT-WORLD => #false
+
+
+;;;; Function Definition
 (define (game-over world)
   (or (spaceship-hit? (world-ibullets world)
                       (world-spaceship world))
       (invaders-dead? (world-invaders world))))
 
+;;;; Tests
+(check-expect (game-over DEAD-WORLD) #true)
+(check-expect (game-over INIT-WORLD) #false)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;; part of big bang on tick events;;;;;;;;;;;;;;;;;;;;;;;;;
