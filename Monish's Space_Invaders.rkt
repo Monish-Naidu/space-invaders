@@ -1,6 +1,16 @@
 ;; The first three lines of this file were inserted by DrRacket. They record metadata
 ;; about the language level of this file in a form that our tools can easily process.
 #reader(lib "htdp-beginner-reader.ss" "lang")((modname |Monish's Space_Invaders|) (read-case-sensitive #t) (teachpacks ()) (htdp-settings #(#t constructor repeating-decimal #f #t none #f () #f)))
+;;> Total: 85/91
+
+
+;;> -1 Not only the center of spaceship reach the edge, it stops. You need to calculate the boundary of the spaceship.
+;;> -1 You spaceship bullet disappear when they haven't moved out of bounds
+;;> -1 Game ends when invader bullet haven't touched spaceship, at least the invader bullets doesn't overlap with the spaceship from the big bang window
+;;> -2 Has problem with remove the bullets that hits the invader
+
+
+
 (require 2htdp/universe)
 (require 2htdp/image)
 
@@ -451,7 +461,6 @@
 (define BULLET2 (make-bullet (make-posn 40 40) 5 UP 5))
 (define BULLET-TEST (list BULLET1 BULLET2))
 
-
 ;;;; Function Definition
 (define (draw-bullets lob background)
   (cond
@@ -540,7 +549,6 @@
 (define SBULLET1 (make-bullet (make-posn 30 30) 5 UP 5))
 (define SBULLET2 (make-bullet (make-posn 40 40) 5 UP 5))
 (define SBULLET-TEST (list SBULLET1 SBULLET2))
-
 
 ;;;; Function Definition
 (define (move-spaceship-bullets sbullets)
@@ -905,6 +913,7 @@
                  BULLET-SPEED)
                 ibullets)]
     [else ibullets]))
+;;>-1  Do not use magic number like 1, 10 here
 
 
 
@@ -1275,11 +1284,11 @@
 ;; can't run tests because of random function in add-invader-bullets
 
 
-;(big-bang INIT-WORLD
-;          (to-draw draw-world)
-;          (on-key spaceship-key-events)
-;          (on-tick update-world .1)
-;          (stop-when game-over))
+(big-bang INIT-WORLD
+          (to-draw draw-world)
+          (on-key spaceship-key-events)
+          (on-tick update-world .1)
+          (stop-when game-over))
           
 
 
